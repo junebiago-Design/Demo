@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Price List – June Biago Graphics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+            padding: 35px;
+        }
+        h1 {
+            color: #1e4663;
+            border-bottom: 2px solid #2c7da0;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+        .back {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2c7da0;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back:hover { text-decoration: underline; }
+        select, button {
+            padding: 10px 15px;
+            font-size: 14px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            background: white;
+        }
+        button {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .details {
+            margin-top: 25px;
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #e2edf2;
+        }
+        .detail-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .detail-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+        }
+        .label {
+            font-weight: bold;
+            color: #0f3b5c;
+            width: 160px;
+            flex-shrink: 0;
+        }
+        .value {
+            flex: 1;
+            color: #1e2a3e;
+        }
+        hr {
+            margin: 16px 0;
+            border: none;
+            border-top: 1px solid #dce5ef;
+        }
+        footer {
+            margin-top: 30px;
+            font-size: 12px;
+            text-align: center;
+            color: #6c757d;
+        }
+        @media (max-width: 600px) {
+            .label { width: 120px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="back">← Back to Hub</a>
+    <h1>💰 Price List (Philippines Peso)</h1>
+    <div style="margin-bottom: 20px;">
+        <label>Select a service: </label>
+        <select id="serviceSelect">
+            <option value="logo">Logo & Brand Identity</option>
+            <option value="print">Print Materials (Flyer/Brochure/Poster)</option>
+            <option value="social">Social Media Graphics</option>
+            <option value="motion">Motion Design & Video Edits</option>
+            <option value="computer">Computer Repair / Upgrade / Maintenance</option>
+            <option value="automation">Process Automation</option>
+            <option value="web">Web Design</option>
+        </select>
+    </div>
+
+    <div id="priceDetails" class="details">
+        <!-- Dynamic content will appear here -->
+    </div>
+    <footer>Prices are in Philippine Peso (₱). Turnaround starts after all assets received.</footer>
+</div>
+
+<script>
+    const services = {
+        logo: {
+            name: "Logo & Brand Identity",
+            price: "₱3,000 – ₱25,000",
+            turnaround: "5–14 days",
+            revisions: "2–3 rounds",
+            warranty: null,
+            details: "Basic logo pack (3k-6k) includes PNG, JPG, SVG, AI. Full brand identity (12k-25k) includes logo, submark, color palette, fonts, brand guide PDF, business card mockup."
+        },
+        print: {
+            name: "Print Materials",
+            price: "Flyer: ₱1,500-3,000 | Poster: ₱2,500-5,000 | Brochure: ₱4,000-8,000",
+            turnaround: "3–10 days",
+            revisions: "2 rounds",
+            warranty: null,
+            details: "CMYK, 300 DPI, 3mm bleed + crop marks. PDF + print-ready JPG/AI."
+        },
+        social: {
+            name: "Social Media Graphics",
+            price: "Single post: ₱800-1,500 | 10-post package: ₱6,000-12,000",
+            turnaround: "1–12 days",
+            revisions: "1–2 rounds",
+            warranty: null,
+            details: "1080x1080px or 1080x1920px, RGB 72 DPI. PNG/JPG + PSD, Canva template optional."
+        },
+        motion: {
+            name: "Motion Design & Video Edits",
+            price: "Logo animation: ₱2,500-5,000 | Reel: ₱3,500-7,000 | Ad: ₱7,000-15,000 | Full edit: ₱12,000-25,000",
+            turnaround: "3–14 days",
+            revisions: "2–3 rounds",
+            warranty: null,
+            details: "MP4 (H.264), 1080p/4K. Includes captions, audio mix, source project optional."
+        },
+        computer: {
+            name: "Computer Repair / Upgrade / Maintenance",
+            price: "Diagnostic fee: ₱500 | Hourly labor: ₱800 | Parts: actual cost + 15%",
+            turnaround: "1–5 days (depending on parts)",
+            revisions: null,
+            warranty: "30 days labor warranty. Parts covered by manufacturer’s warranty. Client responsible for data backup.",
+            details: "Hardware diagnostics, OS reinstall, data backup (client responsible), upgrade installation. Diagnostic fee waived if repair proceeds."
+        },
+        automation: {
+            name: "Process Automation",
+            price: "Starts at ₱8,000 (simple script) to ₱50,000+ (full workflow)",
+            turnaround: "7–21 days",
+            revisions: "2 rounds of logic changes",
+            warranty: null,
+            details: "Includes consultation, script/automation tool, basic documentation. Additional support billed hourly (₱1,200/hr)."
+        },
+        web: {
+            name: "Web Design",
+            price: "Landing page: ₱8,000-15,000 | Multi-page: ₱20,000-60,000",
+            turnaround: "10–30 days",
+            revisions: "2 rounds of design changes (code changes after development = extra)",
+            warranty: null,
+            details: "Responsive design, up to 5 pages, contact form, basic SEO. Hosting not included."
+        }
+    };
+
+    function displayService(serviceKey) {
+        const s = services[serviceKey];
+        if (!s) return;
+        let policyHtml = '';
+        if (s.revisions !== null && s.revisions !== undefined) {
+            policyHtml = `<div class="detail-item"><span class="label">Revisions:</span><span class="value">${s.revisions} (one round = consolidated batch). Additional rounds: ₱500/hour.</span></div>`;
+        } else if (s.warranty) {
+            policyHtml = `<div class="detail-item"><span class="label">Warranty:</span><span class="value">${s.warranty}</span></div>`;
+        }
+        const html = `
+            <div class="detail-grid">
+                <div class="detail-item"><span class="label">Service:</span><span class="value">${s.name}</span></div>
+                <div class="detail-item"><span class="label">Price range:</span><span class="value">${s.price}</span></div>
+                <div class="detail-item"><span class="label">Turnaround:</span><span class="value">${s.turnaround}</span></div>
+                ${policyHtml}
+                <div class="detail-item"><span class="label">Important details:</span><span class="value">${s.details}</span></div>
+                <hr>
+                <div class="detail-item"><span class="label">Payment:</span><span class="value">50% deposit, 50% upon final approval. Late fee: 10%/week.</span></div>
+            </div>
+        `;
+        document.getElementById('priceDetails').innerHTML = html;
+    }
+
+    document.getElementById('serviceSelect').addEventListener('change', (e) => {
+        displayService(e.target.value);
+    });
+    displayService('logo');
+</script>
+</body>
+</html>
