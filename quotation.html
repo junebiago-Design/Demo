@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quotation Generator – June Biago Graphics</title>
+    <!-- Load external presets -->
+    <script src="service_presets.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #e9ecef;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.15);
+            padding: 35px;
+        }
+        h1, h2 { color: #1e4663; margin-bottom: 15px; }
+        .form-group { margin-bottom: 20px; }
+        label { font-weight: bold; display: block; margin-bottom: 6px; color: #0f3b5c; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-family: inherit;
+        }
+        .row { display: flex; gap: 20px; flex-wrap: wrap; }
+        button {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .back { display: inline-block; margin-bottom: 20px; color: #2c7da0; text-decoration: none; }
+        hr { margin: 20px 0; }
+        footer { margin-top: 30px; font-size: 12px; text-align: center; }
+        .payment-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 5px; }
+        .payment-group label { font-weight: normal; display: inline-flex; align-items: center; gap: 5px; }
+        .status { font-size: 12px; margin-top: 10px; color: #2e7d32; }
+        .folder-btn { background: #6c757d; margin-right: 10px; }
+
+        /* Professional itemized pricing table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid #dee2e6;
+            padding: 10px 8px;
+            vertical-align: middle;
+        }
+        .items-table th {
+            background: #1e4663;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+        .items-table td {
+            background: white;
+        }
+        .items-table input, .items-table select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .readonly-price {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+        .total-cell {
+            font-weight: 500;
+            text-align: right;
+            padding-right: 12px;
+        }
+        .action-btn {
+            background: #d32f2f;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 20px;
+        }
+        .add-btn {
+            background: #4caf50;
+            margin: 10px 0 20px;
+            padding: 8px 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="back">← Back to Hub</a>
+    <h1>📄 Quotation / Proposal Generator</h1>
+    <div id="configStatus" class="status" style="margin-bottom: 10px;">Loading configuration...</div>
+    <div class="status" style="background:#e3f2fd; padding:8px; border-radius:12px; margin-bottom:15px;">
+        💾 <strong>Auto‑save to "Record" folder:</strong><br>
+        1️⃣ Create a folder named <strong>"Record"</strong> in the same location as your <strong>index.html</strong>.<br>
+        2️⃣ Click <strong>"Select Record Folder"</strong> below and choose that folder (only once per browser session).<br>
+        3️⃣ All future quotations will be saved there automatically – no further prompts.
+    </div>
+    <div style="margin-bottom: 15px;">
+        <button type="button" id="selectFolderBtn" class="folder-btn">📁 Select Record Folder</button>
+        <button type="button" id="clearFolderBtn" style="background:#dc3545;">🗑️ Clear Folder</button>
+        <span id="folderStatus" style="margin-left: 10px; font-size: 12px;"></span>
+    </div>
+
+    <form id="quotationForm">
+        <div class="row">
+            <div class="form-group"><label>Client name *</label><input type="text" id="clientName" required></div>
+            <div class="form-group"><label>Client email *</label><input type="email" id="clientEmail" required></div>
+        </div>
+        <div class="row">
+            <div class="form-group"><label>Contact number *</label><input type="tel" id="clientPhone" placeholder="+63 XXX XXX XXXX" required></div>
+            <div class="form-group"><label>Select service *</label>
+                <select id="serviceSelect"></select>
+            </div>
+        </div>
+        <div class="form-group"><label>Pre‑detailed scope of work (auto‑filled)</label>
+            <textarea id="scopeOfWork" rows="4" readonly style="background:#f8fafc;"></textarea>
+        </div>
+        <div class="form-group"><label>Additional scope notes / custom requirements</label>
+            <textarea id="additionalScope" placeholder="Add any extra details..."></textarea>
+        </div>
+
+        <h2>Itemized Pricing</h2>
+        <table class="items-table" id="itemsTable">
+            <thead>
+                <tr><th style="width:40%">Item Description</th><th style="width:15%">Quantity</th><th style="width:20%">Unit Price (₱)</th><th style="width:15%">Total (₱)</th><th style="width:10%">Action</th></tr>
+            </thead>
+            <tbody id="itemsTableBody">
+                <!-- No initial rows – user must click "+ Add item" -->
+            </tbody>
+        </table>
+        <button type="button" id="addItemBtn" class="add-btn">+ Add item</button>
+
+        <div class="form-group"><label>Discount (₱) or adjustment</label><input type="number" id="discount" value="0"></div>
+
+        <div class="form-group"><label>Mode of payment (select all that apply)</label>
+            <div class="payment-group">
+                <label><input type="checkbox" class="paymentMethod" value="Bank transfer"> Bank transfer</label>
+                <label><input type="checkbox" class="paymentMethod" value="GCash"> GCash</label>
+                <label><input type="checkbox" class="paymentMethod" value="PayPal"> PayPal</label>
+                <label><input type="checkbox" class="paymentMethod" value="Cash"> Cash</label>
+            </div>
+        </div>
+
+        <div class="form-group"><label>Additional notes / terms (e.g., payment schedule)</label>
+            <textarea id="quoteNotes" placeholder="Payment terms, delivery timeline, etc."></textarea>
+        </div>
+
+        <button type="button" id="generateQuoteBtn" style="margin-top: 20px; width:100%;">📄 Generate Quotation & Save to Record Folder</button>
+        <div id="saveStatus" class="status"></div>
+    </form>
+    <footer>Fill in details. The quotation HTML will be saved directly to your selected "Record" folder.</footer>
+</div>
+
+<script>
+    // Global configuration (will be populated from SERVICE_CONFIG)
+    let scopeMap = {};
+    let servicePresets = {};
+    let currentService = "logo";
+    let directoryHandle = null;
+    let configLoaded = false;
+
+    // Load config from global variable (set by service_presets.js)
+    function loadConfig() {
+        if (typeof SERVICE_CONFIG !== 'undefined') {
+            scopeMap = SERVICE_CONFIG.scopeMap;
+            servicePresets = SERVICE_CONFIG.servicePresets;
+            document.getElementById('configStatus').innerHTML = '✅ Configuration loaded from service_presets.js';
+            document.getElementById('configStatus').style.color = '#2e7d32';
+            configLoaded = true;
+            // Populate service dropdown
+            const serviceSelect = document.getElementById('serviceSelect');
+            serviceSelect.innerHTML = '';
+            const labels = {
+                logo: 'Logo & Brand Identity',
+                print: 'Print Materials',
+                social: 'Social Media Graphics',
+                motion: 'Motion Design & Video Edits',
+                computer: 'Computer Repair',
+                automation: 'Process Automation',
+                web: 'Web Design'
+            };
+            for (const key in scopeMap) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = labels[key] || key;
+                serviceSelect.appendChild(option);
+            }
+            currentService = serviceSelect.value;
+            updateScope();
+        } else {
+            document.getElementById('configStatus').innerHTML = '⚠️ service_presets.js not found. Using fallback defaults.';
+            document.getElementById('configStatus').style.color = '#ed6c02';
+            // Fallback hardcoded data
+            scopeMap = {
+                logo: "Logo & Brand Identity: includes primary logo, submark, color palette, font pairings, brand guide PDF, and business card mockup. Up to 3 rounds of revisions.",
+                print: "Print Materials: design of flyer (A5/A6), poster (A3/A2), or brochure (bi-fold/tri-fold). Includes 3mm bleed, crop marks, print-ready PDF. 2 rounds of revisions.",
+                social: "Social Media Graphics: custom designs for posts/stories. 10-post package includes Canva template. 1-2 revision rounds.",
+                motion: "Motion Design & Video Edits: up to 60-second video or animation. Includes MP4 (1080p/4K), captions, and audio mix. 2 rounds of revisions.",
+                computer: "Computer Repair / Upgrade / Maintenance: diagnostic, hardware repair, OS reinstall, upgrade installation. Parts cost not included. 30-day labor warranty.",
+                automation: "Process Automation: consultation, script/automation tool development, basic documentation. 2 rounds of logic changes.",
+                web: "Web Design: responsive landing page or multi-page site (up to 5 pages), contact form, basic SEO. 2 rounds of design revisions."
+            };
+            servicePresets = {
+                logo: [ { name: "Logo Design", price: 5000 }, { name: "Full Brand Identity", price: 15000 }, { name: "Business Card Design", price: 2000 }, { name: "Brand Guide PDF", price: 3000 } ],
+                print: [ { name: "Flyer (A5/A6)", price: 2500 }, { name: "Poster (A3/A2)", price: 3500 }, { name: "Brochure (bi-fold)", price: 5000 }, { name: "Brochure (tri-fold)", price: 6000 } ],
+                social: [ { name: "Single Social Post", price: 1200 }, { name: "5-Post Package", price: 5000 }, { name: "10-Post Package", price: 8000 }, { name: "Story Template Set", price: 3000 } ],
+                motion: [ { name: "Logo Animation (5-10 sec)", price: 4000 }, { name: "Social Media Reel (15-30 sec)", price: 5500 }, { name: "Short Ad (30-60 sec)", price: 10000 }, { name: "Full Video Edit (up to 3 min)", price: 18000 } ],
+                computer: [ { name: "Diagnostic Fee", price: 500 }, { name: "OS Reinstall", price: 1200 }, { name: "Hardware Installation", price: 800 }, { name: "Data Backup", price: 600 } ],
+                automation: [ { name: "Simple Script", price: 8000 }, { name: "Workflow Automation", price: 20000 }, { name: "API Integration", price: 15000 }, { name: "Consultation (per hour)", price: 1200 } ],
+                web: [ { name: "Landing Page (1 page)", price: 10000 }, { name: "Multi-page Site (up to 5 pages)", price: 25000 }, { name: "E-commerce Integration", price: 20000 }, { name: "SEO Basic Setup", price: 5000 } ]
+            };
+            const serviceSelect = document.getElementById('serviceSelect');
+            serviceSelect.innerHTML = '';
+            const labels = ['logo','print','social','motion','computer','automation','web'];
+            const labelNames = {
+                logo: 'Logo & Brand Identity',
+                print: 'Print Materials',
+                social: 'Social Media Graphics',
+                motion: 'Motion Design & Video Edits',
+                computer: 'Computer Repair',
+                automation: 'Process Automation',
+                web: 'Web Design'
+            };
+            for (let key of labels) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = labelNames[key];
+                serviceSelect.appendChild(option);
+            }
+            currentService = serviceSelect.value;
+            updateScope();
+            configLoaded = true;
+        }
+    }
+
+    function updateScope() {
+        currentService = document.getElementById('serviceSelect').value;
+        document.getElementById('scopeOfWork').value = scopeMap[currentService] || "Please specify scope.";
+        // When service changes, refresh all rows to match new presets
+        refreshAllItemRows();
+    }
+
+    function refreshAllItemRows() {
+        const tbody = document.getElementById('itemsTableBody');
+        const rows = tbody.querySelectorAll('tr');
+        if (rows.length === 0) return;
+        const currentItems = getItemsFromTable();
+        tbody.innerHTML = '';
+        for (let item of currentItems) {
+            const match = servicePresets[currentService]?.find(p => p.name === item.desc);
+            if (match) {
+                addDropdownRow(item.desc, item.qty, match.price);
+            } else {
+                addManualRow(item.desc, item.qty, item.price);
+            }
+        }
+    }
+
+    function addDropdownRow(selectedName = null, qty = 1, price = null) {
+        const presets = servicePresets[currentService];
+        if (!presets || presets.length === 0) return;
+        const tbody = document.getElementById('itemsTableBody');
+        const row = tbody.insertRow();
+
+        // Build dropdown options
+        let optionsHtml = '';
+        for (let p of presets) {
+            const selected = (selectedName === p.name) ? 'selected' : '';
+            optionsHtml += `<option value="${p.name}" data-price="${p.price}" ${selected}>${p.name}</option>`;
+        }
+        optionsHtml += `<option value="Other" data-price="0">Other (manual entry)</option>`;
+
+        const defaultPrice = (price !== null) ? price : (presets.find(p => p.name === selectedName)?.price || presets[0].price);
+
+        // Cell 0: Description (dropdown)
+        const cellDesc = row.insertCell(0);
+        const select = document.createElement('select');
+        select.className = 'itemSelect';
+        select.innerHTML = optionsHtml;
+        cellDesc.appendChild(select);
+
+        // Cell 1: Quantity
+        const cellQty = row.insertCell(1);
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.className = 'itemQty';
+        qtyInput.value = qty;
+        qtyInput.min = 1;
+        qtyInput.step = 1;
+        cellQty.appendChild(qtyInput);
+
+        // Cell 2: Unit Price
+        const cellPrice = row.insertCell(2);
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.className = 'itemPrice';
+        priceInput.value = defaultPrice;
+        priceInput.step = 100;
+        priceInput.min = 0;
+        priceInput.readOnly = true;
+        priceInput.classList.add('readonly-price');
+        priceInput.style.backgroundColor = '#e9ecef';
+        cellPrice.appendChild(priceInput);
+
+        // Cell 3: Total (auto-calc)
+        const cellTotal = row.insertCell(3);
+        const totalSpan = document.createElement('span');
+        totalSpan.className = 'totalDisplay';
+        totalSpan.style.fontWeight = 'bold';
+        cellTotal.appendChild(totalSpan);
+        cellTotal.classList.add('total-cell');
+
+        // Cell 4: Remove button
+        const cellAction = row.insertCell(4);
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '✖ Remove';
+        removeBtn.className = 'action-btn';
+        removeBtn.style.background = '#d32f2f';
+        removeBtn.style.padding = '4px 10px';
+        removeBtn.style.fontSize = '12px';
+        removeBtn.addEventListener('click', () => row.remove());
+        cellAction.appendChild(removeBtn);
+
+        // Update total when quantity or price changes
+        function updateTotal() {
+            const q = parseFloat(qtyInput.value) || 0;
+            const p = parseFloat(priceInput.value) || 0;
+            const total = q * p;
+            totalSpan.textContent = `₱${total.toLocaleString()}`;
+        }
+        qtyInput.addEventListener('input', updateTotal);
+        priceInput.addEventListener('input', updateTotal);
+        updateTotal();
+
+        // Handle dropdown change (preset vs Other)
+        select.addEventListener('change', function() {
+            const selectedValue = select.value;
+            const selectedOption = select.selectedOptions[0];
+            const presetPrice = parseFloat(selectedOption.dataset.price) || 0;
+            if (selectedValue === 'Other') {
+                // Convert this row to manual entry
+                convertRowToManual(row, qtyInput.value, priceInput.value);
+            } else {
+                priceInput.value = presetPrice;
+                priceInput.readOnly = true;
+                priceInput.classList.add('readonly-price');
+                priceInput.style.backgroundColor = '#e9ecef';
+                updateTotal();
+            }
+        });
+    }
+
+    function addManualRow(description, qty = 1, price = 0) {
+        const tbody = document.getElementById('itemsTableBody');
+        const row = tbody.insertRow();
+
+        // Cell 0: Description (text input)
+        const cellDesc = row.insertCell(0);
+        const descInput = document.createElement('input');
+        descInput.type = 'text';
+        descInput.className = 'itemDescManual';
+        descInput.value = description;
+        descInput.placeholder = 'Describe the item';
+        cellDesc.appendChild(descInput);
+
+        // Cell 1: Quantity
+        const cellQty = row.insertCell(1);
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.className = 'itemQty';
+        qtyInput.value = qty;
+        qtyInput.min = 1;
+        qtyInput.step = 1;
+        cellQty.appendChild(qtyInput);
+
+        // Cell 2: Unit Price (editable)
+        const cellPrice = row.insertCell(2);
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.className = 'itemPrice';
+        priceInput.value = price;
+        priceInput.step = 100;
+        priceInput.min = 0;
+        cellPrice.appendChild(priceInput);
+
+        // Cell 3: Total
+        const cellTotal = row.insertCell(3);
+        const totalSpan = document.createElement('span');
+        totalSpan.className = 'totalDisplay';
+        totalSpan.style.fontWeight = 'bold';
+        cellTotal.appendChild(totalSpan);
+        cellTotal.classList.add('total-cell');
+
+        // Cell 4: Remove button
+        const cellAction = row.insertCell(4);
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '✖ Remove';
+        removeBtn.className = 'action-btn';
+        removeBtn.style.background = '#d32f2f';
+        removeBtn.style.padding = '4px 10px';
+        removeBtn.style.fontSize = '12px';
+        removeBtn.addEventListener('click', () => row.remove());
+        cellAction.appendChild(removeBtn);
+
+        function updateTotal() {
+            const q = parseFloat(qtyInput.value) || 0;
+            const p = parseFloat(priceInput.value) || 0;
+            const total = q * p;
+            totalSpan.textContent = `₱${total.toLocaleString()}`;
+        }
+        qtyInput.addEventListener('input', updateTotal);
+        priceInput.addEventListener('input', updateTotal);
+        updateTotal();
+    }
+
+    function convertRowToManual(row, existingQty, existingPrice) {
+        // Clear existing cells and rebuild as manual row
+        row.innerHTML = '';
+        // Cell 0: manual description input
+        const cellDesc = row.insertCell(0);
+        const descInput = document.createElement('input');
+        descInput.type = 'text';
+        descInput.className = 'itemDescManual';
+        descInput.placeholder = 'Describe the item';
+        descInput.value = '';
+        cellDesc.appendChild(descInput);
+
+        // Cell 1: quantity
+        const cellQty = row.insertCell(1);
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.className = 'itemQty';
+        qtyInput.value = existingQty;
+        qtyInput.min = 1;
+        qtyInput.step = 1;
+        cellQty.appendChild(qtyInput);
+
+        // Cell 2: price (editable)
+        const cellPrice = row.insertCell(2);
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.className = 'itemPrice';
+        priceInput.value = existingPrice;
+        priceInput.step = 100;
+        priceInput.min = 0;
+        cellPrice.appendChild(priceInput);
+
+        // Cell 3: total
+        const cellTotal = row.insertCell(3);
+        const totalSpan = document.createElement('span');
+        totalSpan.className = 'totalDisplay';
+        totalSpan.style.fontWeight = 'bold';
+        cellTotal.appendChild(totalSpan);
+        cellTotal.classList.add('total-cell');
+
+        // Cell 4: remove button
+        const cellAction = row.insertCell(4);
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '✖ Remove';
+        removeBtn.className = 'action-btn';
+        removeBtn.style.background = '#d32f2f';
+        removeBtn.style.padding = '4px 10px';
+        removeBtn.style.fontSize = '12px';
+        removeBtn.addEventListener('click', () => row.remove());
+        cellAction.appendChild(removeBtn);
+
+        function updateTotal() {
+            const q = parseFloat(qtyInput.value) || 0;
+            const p = parseFloat(priceInput.value) || 0;
+            const total = q * p;
+            totalSpan.textContent = `₱${total.toLocaleString()}`;
+        }
+        qtyInput.addEventListener('input', updateTotal);
+        priceInput.addEventListener('input', updateTotal);
+        updateTotal();
+    }
+
+    function getItemsFromTable() {
+        const items = [];
+        const tbody = document.getElementById('itemsTableBody');
+        for (let row of tbody.rows) {
+            let desc = '';
+            let qty = 0, price = 0;
+            const selectEl = row.querySelector('.itemSelect');
+            if (selectEl) {
+                const selectedText = selectEl.options[selectEl.selectedIndex]?.text || '';
+                desc = selectedText;
+                if (desc === 'Other') desc = '';
+            } else {
+                const manualInput = row.querySelector('.itemDescManual');
+                if (manualInput) desc = manualInput.value.trim();
+            }
+            const qtyInput = row.querySelector('.itemQty');
+            const priceInput = row.querySelector('.itemPrice');
+            if (qtyInput) qty = parseFloat(qtyInput.value) || 0;
+            if (priceInput) price = parseFloat(priceInput.value) || 0;
+            if (desc && qty > 0) {
+                items.push({ desc, qty, price, total: qty * price });
+            }
+        }
+        return items;
+    }
+
+    document.getElementById('serviceSelect').addEventListener('change', updateScope);
+    document.getElementById('addItemBtn').addEventListener('click', () => {
+        const firstPreset = servicePresets[currentService]?.[0];
+        if (firstPreset) {
+            addDropdownRow(firstPreset.name, 1, firstPreset.price);
+        } else {
+            addManualRow("New item", 1, 0);
+        }
+    });
+
+    function getFormattedDate() {
+        const d = new Date();
+        return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+
+    function buildQuotationHTML(clientName, clientEmail, clientPhone, timestamp, items, subtotal, discount, total, additionalScope, quoteNotes, paymentMethodsStr, issueDate, validUntil, serviceText) {
+        const itemsHtml = items.map(i => `<tr><td>${escapeHtml(i.desc)}</td><td style="text-align:center">${i.qty}</td><td style="text-align:right">₱${i.price.toLocaleString()}</td><td style="text-align:right">₱${i.total.toLocaleString()}</td>`).join('');
+        const scopeOfWork = document.getElementById('scopeOfWork').value;
+        return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Quotation_${clientName}_${timestamp}</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Roboto, sans-serif; background: white; display: flex; justify-content: center; padding: 20px; }
+    .page { max-width: 210mm; margin: 0 auto; background: white; padding: 20mm; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h1 { color: #1e4663; border-bottom: 2px solid #2c7da0; padding-bottom: 8px; margin-bottom: 20px; }
+    h3 { margin: 15px 0 8px; color: #1e4663; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; page-break-inside: avoid; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f2f2f2; }
+    .total-row { font-weight: bold; background: #f9f9f9; }
+    .sign-line { display: flex; justify-content: space-between; margin-top: 40px; gap: 40px; flex-wrap: wrap; page-break-inside: avoid; }
+    .sign-field { flex: 1; border-top: 1px solid #000; padding-top: 6px; margin-top: 20px; font-size: 10pt; text-align: center; }
+    .footer { margin-top: 40px; font-size: 9pt; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; page-break-inside: avoid; }
+    @media print {
+        body { padding: 0; }
+        .page { box-shadow: none; padding: 15mm; }
+    }
+</style>
+</head>
+<body>
+<div class="page">
+    <h1>📄 Quotation / Proposal</h1>
+    <p><strong>Prepared for:</strong> ${escapeHtml(clientName)}<br>
+    <strong>Email:</strong> ${escapeHtml(clientEmail)}<br>
+    <strong>Contact number:</strong> ${escapeHtml(clientPhone)}<br>
+    <strong>Date issued:</strong> ${issueDate}<br>
+    <strong>Valid until:</strong> ${validUntil} (7 days from issue date)<br>
+    <strong>Service:</strong> ${escapeHtml(serviceText)}</p>
+
+    <h3>Scope of Work</h3>
+    <p>${escapeHtml(scopeOfWork)}</p>
+    ${additionalScope ? `<p><strong>Additional scope:</strong> ${escapeHtml(additionalScope)}</p>` : ''}
+
+    <h3>Itemized Pricing</h3>
+    <table>
+        <thead><tr><th>Description</th><th>Quantity</th><th>Unit Price (₱)</th><th>Total (₱)</th></tr></thead>
+        <tbody>${itemsHtml}</tbody>
+        <tr class="total-row"><td colspan="3" style="text-align:right;">Subtotal</td><td style="text-align:right">₱${subtotal.toLocaleString()}</td></tr>
+        ${discount ? `<tr class="total-row"><td colspan="3" style="text-align:right;">Discount</td><td style="text-align:right">-₱${discount.toLocaleString()}</td></tr>` : ''}
+        <tr class="total-row"><td colspan="3" style="text-align:right;">Total (₱)</td><td style="text-align:right">₱${total.toLocaleString()}</td></tr>
+    </table>
+
+    <h3>Mode of Payment</h3>
+    <p>${escapeHtml(paymentMethodsStr)}</p>
+
+    <h3>Terms & Notes</h3>
+    <p>${escapeHtml(quoteNotes) || 'Standard payment terms: 50% deposit to start, 50% upon final approval. Late payment: 10% per week.'}</p>
+
+    <h3>Acceptance</h3>
+    <div class="sign-line">
+        <div class="sign-field">Conformed by (signature): ________________________</div>
+        <div class="sign-field">Printed name: ${escapeHtml(clientName)}</div>
+    </div>
+    <div class="sign-line">
+        <div class="sign-field">Prepared by: June Biago (signature): ________________________</div>
+        <div class="sign-field">Date: ${issueDate}</div>
+    </div>
+    <div class="footer">
+        June Biago Graphics – Professional Design Services<br>
+        This document is a quotation only. Work begins after signed contract and deposit.
+    </div>
+</div>
+</body>
+</html>`;
+    }
+
+    async function saveQuotation(htmlContent, filename) {
+        const statusDiv = document.getElementById('saveStatus');
+        if (!directoryHandle) {
+            statusDiv.innerText = "❌ No Record folder selected. Click 'Select Record Folder' first.";
+            return false;
+        }
+        try {
+            const fileHandle = await directoryHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(htmlContent);
+            await writable.close();
+            statusDiv.innerText = `✅ Quotation saved to "Record" folder: ${filename}`;
+            return true;
+        } catch (err) {
+            console.error(err);
+            statusDiv.innerText = "❌ Error saving to folder. Falling back to download.";
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            return false;
+        }
+    }
+
+    document.getElementById('generateQuoteBtn').addEventListener('click', async () => {
+        const clientName = document.getElementById('clientName').value.trim();
+        const clientEmail = document.getElementById('clientEmail').value.trim();
+        const clientPhone = document.getElementById('clientPhone').value.trim();
+        if (!clientName || !clientEmail || !clientPhone) {
+            alert("Please fill in client name, email, and contact number.");
+            return;
+        }
+        const items = getItemsFromTable();
+        if (items.length === 0) {
+            alert("Please add at least one itemized pricing row.");
+            return;
+        }
+        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-').replace('T', '_');
+        const filename = `Quotation_${clientName.replace(/\s+/g, '_')}_${timestamp}.html`;
+
+        let subtotal = items.reduce((sum, i) => sum + i.total, 0);
+        const discount = parseFloat(document.getElementById('discount').value) || 0;
+        const total = subtotal - discount;
+        const additionalScope = document.getElementById('additionalScope').value.trim();
+        const quoteNotes = document.getElementById('quoteNotes').value.trim();
+        const selectedPayments = Array.from(document.querySelectorAll('.paymentMethod:checked')).map(cb => cb.value);
+        const paymentMethodsStr = selectedPayments.length ? selectedPayments.join(', ') : 'Not specified';
+
+        const issueDate = getFormattedDate();
+        const validUntil = new Date(Date.now() + 7*86400000).toLocaleDateString('en-PH', { year:'numeric', month:'long', day:'numeric' });
+        const serviceText = document.getElementById('serviceSelect').options[document.getElementById('serviceSelect').selectedIndex].text;
+
+        const htmlContent = buildQuotationHTML(clientName, clientEmail, clientPhone, timestamp, items, subtotal, discount, total, additionalScope, quoteNotes, paymentMethodsStr, issueDate, validUntil, serviceText);
+
+        await saveQuotation(htmlContent, filename);
+    });
+
+    // Folder selection logic
+    function updateFolderStatus() {
+        const span = document.getElementById('folderStatus');
+        if (directoryHandle) {
+            span.innerText = `✅ Folder selected: ${directoryHandle.name}`;
+            span.style.color = "#2e7d32";
+        } else {
+            span.innerText = "⚠️ No folder selected. Click 'Select Record Folder' first.";
+            span.style.color = "#ed6c02";
+        }
+    }
+
+    document.getElementById('selectFolderBtn').addEventListener('click', async () => {
+        if (!window.showDirectoryPicker) {
+            alert("Your browser does not support automatic folder saving. Please use Chrome or Edge, or save manually via download.");
+            return;
+        }
+        try {
+            const handle = await window.showDirectoryPicker();
+            directoryHandle = handle;
+            sessionStorage.setItem('recordFolderName', handle.name);
+            updateFolderStatus();
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.error(err);
+                alert("Folder selection failed.");
+            }
+        }
+    });
+
+    document.getElementById('clearFolderBtn').addEventListener('click', () => {
+        directoryHandle = null;
+        sessionStorage.removeItem('recordFolderName');
+        updateFolderStatus();
+    });
+
+    // Start
+    loadConfig();
+</script>
+</body>
+</html>
